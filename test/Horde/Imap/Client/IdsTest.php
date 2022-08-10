@@ -364,10 +364,10 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
         $ids = new Horde_Imap_Client_Ids('1:3');
         $this->assertEquals(
             array(1, 2, 3),
-            iterator_to_array($ids);
+            iterator_to_array($ids)
         );
 
-        foreach(iterator_to_array($ids) as $id) {
+        foreach (iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
     }
@@ -377,10 +377,10 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
         $ids = new Horde_Imap_Client_Ids('1,5,7');
         $this->assertEquals(
             array(1, 5, 7),
-            iterator_to_array($ids);
+            iterator_to_array($ids)
         );
 
-        foreach(iterator_to_array($ids) as $id) {
+        foreach (iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
     }
@@ -392,10 +392,10 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
         
         $this->assertEquals(
             array(1, 5, 7, 101, 102, 103),
-            iterator_to_array($ids);
+            iterator_to_array($ids)
         );
 
-        foreach(iterator_to_array($ids) as $id) {
+        foreach (iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
     }

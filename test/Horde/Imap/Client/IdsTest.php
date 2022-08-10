@@ -361,7 +361,7 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
 
     public function testForcedIntForRange()
     (
-        $ids = new Horde_Imap_Client_Ids('1:3'));
+        $ids = new Horde_Imap_Client_Ids('1:3');
         $this->assertEquals(
             array(1, 2, 3),
             iterator_to_array($ids);

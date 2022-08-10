@@ -360,32 +360,30 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
     }
 
     public function testForcedIntForRange()
-    (
+    {
         $ids = new Horde_Imap_Client_Ids('1:3');
         $this->assertEquals(
             array(1, 2, 3),
             iterator_to_array($ids);
         );
 
-        foreach(iterator_to_array($ids) as $id)
-        {
+        foreach(iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
-    )
+    }
 
     public function testForcedIntForSequence()
-    (
+    {
         $ids = new Horde_Imap_Client_Ids('1,5,7');
         $this->assertEquals(
             array(1, 5, 7),
             iterator_to_array($ids);
         );
 
-        foreach(iterator_to_array($ids) as $id)
-        {
+        foreach(iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
-    )
+    }
 
     public function testAddingWithForcedIntConversion()
     {
@@ -397,10 +395,8 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
             iterator_to_array($ids);
         );
 
-        foreach(iterator_to_array($ids) as $id)
-        {
+        foreach(iterator_to_array($ids) as $id) {
             $this->assertInternalType('int', $id);
         }
     }
-
 }

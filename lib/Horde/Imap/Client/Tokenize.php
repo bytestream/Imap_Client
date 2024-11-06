@@ -93,6 +93,10 @@ class Horde_Imap_Client_Tokenize implements Iterator
         }
     }
 
+    public function __destruct() {
+        $this->_stream->close();
+    }
+
     /**
      */
     public function __clone()

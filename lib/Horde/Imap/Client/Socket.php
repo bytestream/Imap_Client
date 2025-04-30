@@ -4340,13 +4340,15 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                         $this->_temp['logout'] = true;
                         $this->logout();
                         throw $e;
-                }
 
-                /* For all other issues, catch and store exception; don't
-                 * throw until all input is read since we need to clear
-                 * incoming queue. (For now, only store first exception.) */
-                if (is_null($exception)) {
-                    $exception = $e;
+                    default:
+                        /* For all other issues, catch and store exception; don't
+                         * throw until all input is read since we need to clear
+                         * incoming queue. (For now, only store first exception.) */
+                        if (is_null($exception)) {
+                            $exception = $e;
+                        }
+
                 }
 
                 if (($e instanceof Horde_Imap_Client_Exception_ServerResponse) &&

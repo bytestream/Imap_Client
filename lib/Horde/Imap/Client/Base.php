@@ -4053,7 +4053,7 @@ implements Serializable, SplObserver
         );
 
         $fields = array('uidnext', 'uidvalidity');
-        if (empty($status['highestmodseq'])) {
+        if (!isset($status['highestmodseq'])) {
             $fields[] = 'messages';
         } else {
             $fields[] = 'highestmodseq';

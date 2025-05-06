@@ -4066,7 +4066,7 @@ implements Serializable, SplObserver
             $out[$sync_map[$val]] = $status[$val];
         }
 
-        return array_filter($out);
+        return $out;
     }
 
     /**

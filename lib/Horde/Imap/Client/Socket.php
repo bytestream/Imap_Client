@@ -3567,21 +3567,23 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
         return $ret;
     }
 
-    /**
-     */
     protected function _vanished($modseq, Horde_Imap_Client_Ids $ids)
     {
-        $pipeline = $this->_pipeline(
-            $this->_command('UID FETCH')->add(array(
-                strval($ids),
-                'UID',
-                new Horde_Imap_Client_Data_Format_List(array(
-                    'VANISHED',
-                    'CHANGEDSINCE',
-                    new Horde_Imap_Client_Data_Format_Number($modseq)
-                ))
-            ))
-        );
+        // Unlike _fetchCmd(), sequence IDs are rejected before reaching here, so we always issue UID FETCH.
+
+        $modifiers = new Horde_Imap_Client_Data_Format_List([
+            'VANISHED',
+            'CHANGEDSINCE',
+            new Horde_Imap_Client_Data_Format_Number($modseq)
+        ]);
+
+        $pipeline = $this->_pipeline();
+
+        foreach ($ids->split($this->_capability()->cmdlength) as $val) {
+            $cmd = $this->_command('UID FETCH')->add([$val, 'UID', $modifiers]);
+            $pipeline->add($cmd);
+        }
+
         $pipeline->data['vanished'] = $this->getIdsOb();
 
         return $this->_sendCmd($pipeline)->data['vanished'];

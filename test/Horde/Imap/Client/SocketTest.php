@@ -354,4 +354,22 @@ class Horde_Imap_Client_SocketTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($env->to);
     }
 
+    public function testVanishedCommand()
+    {
+        // 200 non-consecutive 4-digit UIDs, fits in one 2000-octet command.
+        $ids = new Horde_Imap_Client_Ids(range(1001, 1399, 2));
+        $this->test_ob->doVanishedPipeline(12345, $ids);
+
+        $this->assertCount(1, $this->test_ob->capturedPipeline);
+    }
+
+    public function testVanishedCommandChunks()
+    {
+        // 500 non-consecutive 4-digit UIDs, exceeds the 2000-octet limit.
+        $ids = new Horde_Imap_Client_Ids(range(1001, 1999, 2));
+        $this->test_ob->doVanishedPipeline(12345, $ids);
+
+        $this->assertGreaterThan(1, count($this->test_ob->capturedPipeline));
+    }
+
 }

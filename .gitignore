@@ -30,3 +30,6 @@ run-tests.log
 /.phpunit.result.cache
 /composer.lock
 /vendor
+
+# PhpStorm
+/.idea

@@ -28,6 +28,21 @@ class Horde_Imap_Client_Stub_Socket extends Horde_Imap_Client_Socket
 {
     public $fetch_results;
 
+    private bool $captureSendCmd = false;
+
+    public ?Horde_Imap_Client_Interaction_Pipeline $capturedPipeline = null;
+
+    protected function _sendCmd($cmd)
+    {
+        if ($this->captureSendCmd) {
+            $this->capturedPipeline = ($cmd instanceof Horde_Imap_Client_Interaction_Command)
+                ? $this->_pipeline($cmd)
+                : $cmd;
+            return $this->capturedPipeline;
+        }
+        return parent::_sendCmd($cmd);
+    }
+
     public function getThreadSort($data)
     {
         return new Horde_Imap_Client_Data_Thread($this->doServerResponse($this->_pipeline(), $data)->data['threadparse'], 'uid');
@@ -93,6 +108,12 @@ class Horde_Imap_Client_Stub_Socket extends Horde_Imap_Client_Socket
     public function fetch($mailbox, $query, array $options = array())
     {
         return $this->fetch_results;
+    }
+
+    public function doVanishedPipeline($modseq, Horde_Imap_Client_Ids $ids) {
+        $this->captureSendCmd = true;
+        $this->_init['capability'] = new Horde_Imap_Client_Data_Capability_Imap();
+        return $this->_vanished($modseq, $ids);
     }
 
 }

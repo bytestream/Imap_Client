@@ -389,7 +389,7 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
     {
         $ids = new Horde_Imap_Client_Ids('1,5,7');
         $ids->add('101:103');
-        
+
         $this->assertEquals(
             array(1, 5, 7, 101, 102, 103),
             iterator_to_array($ids)
@@ -398,5 +398,80 @@ class Horde_Imap_Client_IdsTest extends \PHPUnit\Framework\TestCase
         foreach (iterator_to_array($ids) as $id) {
             $this->assertIsInt($id);
         }
+    }
+
+    /**
+     * Regression test: large IMAP range strings like "1:17000000" must not
+     * be expanded into flat arrays. They are kept as compact intervals,
+     * preventing OOM during ESEARCH/QRESYNC response parsing.
+     *
+     * This mirrors the actual call pattern in Socket::_parseSearch() where
+     * add() is called on an existing Ids object with the raw ESEARCH ALL
+     * response string.
+     */
+    public function testLargeRangeDoesNotExpand()
+    {
+        // Mimics $pipeline->data['searchresp']->add($data) in _parseSearch
+        $ids = new Horde_Imap_Client_Ids();
+        $before = memory_get_usage();
+        $ids->add('1:10000000');
+        $after = memory_get_usage();
+        // Flat expansion would need ~400 MB. Intervals use < 1 KB.
+        $this->assertLessThan(1024 * 1024, $after - $before);
+        $this->assertEquals(10000000, count($ids));
+        $this->assertEquals(1, $ids->min);
+        $this->assertEquals(10000000, $ids->max);
+        $this->assertEquals('1:10000000', strval($ids));
+        $this->assertFalse($ids->isEmpty());
+    }
+
+    public function testLargeRangeIteration()
+    {
+        $ids = new Horde_Imap_Client_Ids('1:5,100:102');
+        $this->assertEquals(
+            array(1, 2, 3, 4, 5, 100, 101, 102),
+            iterator_to_array($ids)
+        );
+    }
+
+    public function testLargeRangeMerge()
+    {
+        $ids = new Horde_Imap_Client_Ids('1:100');
+        $ids->add('50:200');
+        $this->assertEquals(200, count($ids));
+        $this->assertEquals('1:200', strval($ids));
+    }
+
+    public function testLargeRangeRemove()
+    {
+        $ids = new Horde_Imap_Client_Ids('1:100');
+        $ids->remove('41:60');
+        $this->assertEquals(80, count($ids));
+        $this->assertEquals('1:40,61:100', strval($ids));
+    }
+
+    public function testLargeRangeAddFlat()
+    {
+        $ids = new Horde_Imap_Client_Ids('1:5');
+        $ids->add(array(3, 4, 5, 6, 7));
+        $this->assertEquals(7, count($ids));
+        $this->assertEquals('1:7', strval($ids));
+    }
+
+    public function testLargeRangeAddIdsObject()
+    {
+        $ids1 = new Horde_Imap_Client_Ids('1:5');
+        $ids2 = new Horde_Imap_Client_Ids('3:8');
+        $ids1->add($ids2);
+        $this->assertEquals(8, count($ids1));
+        $this->assertEquals('1:8', strval($ids1));
+    }
+
+    public function testLargeRangeSerialize()
+    {
+        $ids = new Horde_Imap_Client_Ids('1:1000000');
+        $ids2 = unserialize(serialize($ids));
+        $this->assertEquals(1000000, count($ids2));
+        $this->assertEquals('1:1000000', strval($ids2));
     }
 }

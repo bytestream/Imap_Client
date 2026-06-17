@@ -105,6 +105,9 @@ extends Horde_Imap_Client_Data_Format_Mailbox_TestBase
         );
     }
 
+    /**
+     * @testdox Mailbox with null byte is handled correctly (behavior differs in PHP 8.2+)
+     */
     public function testBadInput()
     {
         if (version_compare(PHP_VERSION, '8.2.0') >= 0) {
@@ -118,10 +121,15 @@ extends Horde_Imap_Client_Data_Format_Mailbox_TestBase
         /* binary() call creates the blank string representation. */
         $this->assertFalse($ob->binary());
 
-        $this->assertEquals(
-            '',
-            strval($ob)
-        );
+        $result = $ob->escape();
+
+        if (version_compare(PHP_VERSION, '8.2', '>=')) {
+            // PHP 8.2+: mb_convert_encoding now encodes null bytes
+            $this->assertEquals('foo&AAA-', $result);
+        } else {
+            // PHP < 8.2: null bytes truncate the string
+            $this->assertEquals('', $result);
+        }
     }
 
 }

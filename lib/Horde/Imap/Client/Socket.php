@@ -3184,8 +3184,16 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                 break;
 
             case 'UID':
-                $ob->setUid($data->next());
+                $uid_val = $data->next();
+                $ob->setUid($uid_val);
                 $uid = true;
+                /* Re-key the result from sequence number to UID if the
+                 * results object is UID-keyed. _parseFetch() stores by
+                 * sequence number ($id), but callers expecting UID keys
+                 * (e.g. when fetching by UID) need the UID key. */
+                if ($pipeline->fetch->key_type == Horde_Imap_Client_Fetch_Results::UID) {
+                    $pipeline->fetch->rekey($id, $uid_val);
+                }
                 break;
 
             case 'MODSEQ':

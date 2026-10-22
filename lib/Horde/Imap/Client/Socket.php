@@ -3223,7 +3223,11 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                         $ob->setHeaders($pipeline->data['fetch_lookup'][$sig], $data->next());
                     } else {
                         // Remove trailing bracket and octet start info
-                        $tag = substr($tag, 0, strrpos($tag, ']'));
+                        $bracket_pos = strrpos($tag, ']');
+                        if ($bracket_pos === false) {
+                            throw new Horde_Imap_Client_Exception('Invalid FETCH response: missing closing bracket in tag', Horde_Imap_Client::ERROR_SERVER);
+                        }
+                        $tag = substr($tag, 0, $bracket_pos);
 
                         if (!strlen($tag)) {
                             // BODY[] request
@@ -3265,7 +3269,11 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                     // Catch BINARY[*]<#> responses
                     // Remove the beginning 'BINARY[' and the trailing bracket
                     // and octet start info
-                    $tag = substr($tag, 7, strrpos($tag, ']') - 7);
+                    $bracket_pos = strrpos($tag, ']');
+                    if ($bracket_pos === false) {
+                        throw new Horde_Imap_Client_Exception('Invalid FETCH response: missing closing bracket in BINARY tag', Horde_Imap_Client::ERROR_SERVER);
+                    }
+                    $tag = substr($tag, 7, $bracket_pos - 7);
                     $body = $data->nextStream();
 
                     if (is_null($body)) {
@@ -3297,7 +3305,11 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                     // Catch BINARY.SIZE[*] responses
                     // Remove the beginning 'BINARY.SIZE[' and the trailing
                     // bracket and octet start info
-                    $tag = substr($tag, 12, strrpos($tag, ']') - 12);
+                    $bracket_pos = strrpos($tag, ']');
+                    if ($bracket_pos === false) {
+                        throw new Horde_Imap_Client_Exception('Invalid FETCH response: missing closing bracket in BINARY.SIZE tag', Horde_Imap_Client::ERROR_SERVER);
+                    }
+                    $tag = substr($tag, 12, $bracket_pos - 12);
                     $ob->setBodyPartSize($tag, $data->next());
                 }
                 break;

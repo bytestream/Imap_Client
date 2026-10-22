@@ -63,4 +63,25 @@ class Horde_Imap_Client_Data_AclTest extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /**
+     * Test that unserialized ACL's _rights is array, not object
+     */
+    public function testUnserializeReturnsArray()
+    {
+        $original = new Horde_Imap_Client_Data_Acl('lrs');
+        $unserialized = unserialize(serialize($original));
+
+        // Use the unserialized object as an array
+        // This would fail with type errors if _rights is stdClass instead of array
+        $this->assertInstanceOf(
+            'Horde_Imap_Client_Data_Acl',
+            $unserialized
+        );
+
+        // Verify array operations work (would fail if _rights is stdClass)
+        $this->assertTrue($unserialized['l']);
+        $this->assertTrue($unserialized['r']);
+        $this->assertTrue($unserialized['s']);
+    }
+
 }

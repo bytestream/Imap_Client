@@ -163,7 +163,7 @@ class Horde_Imap_Client_Data_Acl extends Horde_Imap_Client_Data_AclCommon implem
      */
     public function unserialize($data)
     {
-        $this->_rights = json_decode($data);
+        $this->_rights = json_decode($data, true);
     }
 
     /**

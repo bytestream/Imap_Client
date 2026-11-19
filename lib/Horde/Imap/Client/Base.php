@@ -773,7 +773,7 @@ implements Serializable, SplObserver
                 $first = reset($mbox);
 
                 $ob = new Horde_Imap_Client_Data_Namespace();
-                $ob->delimiter = $first['delimiter'];
+                $ob->delimiter = $first['delimiter'] ?? '';
                 $ns[''] = $ob;
             }
 

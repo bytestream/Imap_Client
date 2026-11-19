@@ -354,6 +354,28 @@ class Horde_Imap_Client_SocketTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($env->to);
     }
 
+    public function testIdWithoutUntaggedResponse()
+    {
+        $this->assertSame(array(), $this->test_ob->sendIdWithoutUntaggedResponse());
+    }
+
+    public function testNamespaceFallbackWithoutListResponse()
+    {
+        $client = $this->getMockBuilder(Horde_Imap_Client_Stub_Socket::class)
+            ->setConstructorArgs(array(array(
+                'password' => 'foo',
+                'username' => 'bar'
+            )))
+            ->onlyMethods(array('login', '_getNamespaces', 'listMailboxes'))
+            ->getMock();
+        $client->method('_getNamespaces')
+            ->willReturn(new Horde_Imap_Client_Namespace_List());
+        $client->method('listMailboxes')->willReturn(array());
+
+        $ns = $client->getNamespaces(array(), array('ob_return' => true));
+        $this->assertSame('', $ns['']->delimiter);
+    }
+
     public function testVanishedCommand()
     {
         // 200 non-consecutive 4-digit UIDs, fits in one 2000-octet command.

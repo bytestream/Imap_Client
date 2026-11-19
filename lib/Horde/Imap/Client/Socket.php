@@ -1004,7 +1004,7 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
             return true;
         };
         $cmd->on_success = function() use ($cmd, &$temp) {
-            $temp['id'] = $cmd->pipeline->data['id'];
+            $temp['id'] = $cmd->pipeline->data['id'] ?? array();
         };
         $this->_cmdQueue[] = $cmd;
     }

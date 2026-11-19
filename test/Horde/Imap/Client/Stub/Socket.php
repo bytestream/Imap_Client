@@ -100,6 +100,15 @@ class Horde_Imap_Client_Stub_Socket extends Horde_Imap_Client_Socket
         $this->_responseCode($this->_pipeline(), $server);
     }
 
+    public function sendIdWithoutUntaggedResponse()
+    {
+        $this->_sendID(array());
+        $cmd = array_pop($this->_cmdQueue);
+        $cmd->pipeline = $this->_pipeline();
+        call_user_func($cmd->on_success);
+        return $this->_temp['id'];
+    }
+
     public function pipeline($cmd = null)
     {
         return $this->_pipeline($cmd);

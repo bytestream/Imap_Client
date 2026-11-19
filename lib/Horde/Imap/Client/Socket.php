@@ -1213,7 +1213,13 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                 )));
             }
 
-            $this->_changeSelected($mailbox, $mode);
+            /* Let the 'CLOSED' response code handle mailbox switching if
+             * QRESYNC is active. */
+            if ($this->_selected) {
+                $pipeline->data['qresyncmbox'] = array($mailbox, $mode);
+            } else {
+                $this->_changeSelected($mailbox, $mode);
+            }
         } else {
             if (!$c->isEnabled('CONDSTORE') &&
                 $this->_initCache() &&
@@ -4992,6 +4998,22 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
         case 'MODIFIED':
             // Defined by RFC 7162 [3.1.3]
             $pipeline->data['modified']->add($rc->data[0]);
+            break;
+
+        case 'CLOSED':
+            // Defined by RFC 7162 [3.2.11]
+            if (isset($pipeline->data['qresyncmbox'])) {
+                /* If there is any pending FETCH cache entries, flush them
+                 * now before changing mailboxes. */
+                $this->_updateCache($pipeline->fetch);
+                $pipeline->fetch->clear();
+
+                $this->_changeSelected(
+                    $pipeline->data['qresyncmbox'][0],
+                    $pipeline->data['qresyncmbox'][1]
+                );
+                unset($pipeline->data['qresyncmbox']);
+            }
             break;
 
         case 'NOTSAVED':

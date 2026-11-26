@@ -43,6 +43,26 @@ class Horde_Imap_Client_Stub_Socket extends Horde_Imap_Client_Socket
         return parent::_sendCmd($cmd);
     }
 
+    public function setConnection(Horde_Imap_Client_Socket_Connection_Socket $connection)
+    {
+        $this->_connection = $connection;
+    }
+
+    public function tryLogin($method)
+    {
+        return $this->_tryLogin($method);
+    }
+
+    public function loginWithAvailableMechanisms()
+    {
+        return $this->_login();
+    }
+
+    public function hasConnection()
+    {
+        return !is_null($this->_connection);
+    }
+
     public function getThreadSort($data)
     {
         return new Horde_Imap_Client_Data_Thread($this->doServerResponse($this->_pipeline(), $data)->data['threadparse'], 'uid');

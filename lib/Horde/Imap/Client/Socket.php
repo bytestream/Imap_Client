@@ -520,6 +520,10 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                 }
                 $resp = false;
             } catch (Horde_Imap_Client_Exception $e) {
+                /* Other mechanisms need a connection. */
+                if (is_null($this->_connection)) {
+                    throw $e;
+                }
                 $resp = false;
             }
 
@@ -4331,9 +4335,12 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
                 }
             } catch (Horde_Imap_Client_Exception $e) {
                 switch ($e->getCode()) {
+                case Horde_Imap_Client_Exception::DISCONNECT:
+                case Horde_Imap_Client_Exception::SERVER_READTIMEOUT:
                 case Horde_Imap_Client_Exception::SERVER_WRITEERROR:
-                    $this->_temp['logout'] = true;
-                    $this->logout();
+                    /* The command can't be finished. On this connection, the
+                     * server would read the next command as its data. */
+                    $this->_dropConnection();
                     break;
                 }
 
@@ -4343,33 +4350,19 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
 
         while ($cmd_count) {
             try {
-                if (! isset($read_start)) {
-                    $read_start = microtime(true);
-                }
-
-                if ($this->_getLine($pipeline) instanceof Horde_Imap_Client_Interaction_Server_Tagged) {
+                if ($this->_waitForLine($pipeline) instanceof Horde_Imap_Client_Interaction_Server_Tagged) {
                     --$cmd_count;
                 }
-
-                $read_start = null;
             } catch (Horde_Imap_Client_Exception $e) {
                 switch ($e->getCode()) {
                     case $e::DISCONNECT:
                         /* Guaranteed to have no more data incoming, so we can
                          * immediately logout. */
-                        $this->_temp['logout'] = true;
-                        $this->logout();
+                        $this->_dropConnection();
                         throw $e;
 
                     case $e::SERVER_READTIMEOUT:
-                        $read_now = microtime(true);
-                        $t_read = $read_now - $read_start;
-                        if ($t_read <= $this->_params['read_timeout']) {
-                            break;
-                        }
-
-                        $this->_temp['logout'] = true;
-                        $this->logout();
+                        $this->_dropConnection();
                         throw $e;
 
                     default:
@@ -4514,7 +4507,7 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
     protected function _processCmdContinuation($pipeline, $noexception = false)
     {
         do {
-            $ob = $this->_getLine($pipeline);
+            $ob = $this->_waitForLine($pipeline);
         } while ($ob instanceof Horde_Imap_Client_Interaction_Server_Untagged);
 
         if ($ob instanceof Horde_Imap_Client_Interaction_Server_Continuation) {
@@ -4573,6 +4566,48 @@ class Horde_Imap_Client_Socket extends Horde_Imap_Client_Base
         }
 
         return $ob;
+    }
+
+    /**
+     * Gets the next line from the IMAP server. A single read gives up after
+     * 'timeout'; reading is retried until 'read_timeout' has passed, checked
+     * after each read. Abandoning a command earlier leaves it unfinished on
+     * the server, which then takes the next command as its data.
+     *
+     * @param Horde_Imap_Client_Interaction_Pipeline $pipeline  Pipeline
+     *                                                          object.
+     *
+     * @return Horde_Imap_Client_Interaction_Server  Server object.
+     *
+     * @throws Horde_Imap_Client_Exception
+     */
+    protected function _waitForLine(
+        Horde_Imap_Client_Interaction_Pipeline $pipeline
+    )
+    {
+        $read_start = hrtime(true);
+
+        while (true) {
+            try {
+                return $this->_getLine($pipeline);
+            } catch (Horde_Imap_Client_Exception $e) {
+                if (($e->getCode() != $e::SERVER_READTIMEOUT) ||
+                    ((hrtime(true) - $read_start) / 1e9 > $this->_params['read_timeout'])) {
+                    throw $e;
+                }
+            }
+        }
+    }
+
+    /**
+     * Closes a connection that can't be used anymore, without sending
+     * LOGOUT.
+     */
+    protected function _dropConnection()
+    {
+        $this->_temp['logout'] = true;
+        $this->logout();
+        unset($this->_temp['logout']);
     }
 
     /**
